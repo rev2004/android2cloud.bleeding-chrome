@@ -13,13 +13,18 @@
     // open a link in a new tab. Pass a link as a string.
     function openLink(link) {
       chrome.tabs.create({'url': link}, function(tab) { });
+      localStorage['oauth_notify'] = false;
     }
     
     // retrieve the latest passed link from the server
     var getLinkReturn;
     var xhr;
     function getLink() {
-      oauth.sendSignedRequest("http://android2cloud.appspot.com/links/get", returnLink, null);
+      try{
+          oauth.sendSignedRequest("http://android2cloud.appspot.com/links/get", returnLink, null);
+      }catch(err){
+          alertOAuthProblem("Error retrieving link: "+err.description);
+      }
     }
     
     function returnLink(resp, xhr) {
@@ -30,11 +35,18 @@
 		resp = "http://"+resp;
 	}
         compareAndOpen(resp);
+      }else if(resp.substr(0, 7) == "<error>"){
+	resp = resp.replace("</error>", "").replace("<error>", "");
+	alertOAuthProblem(resp);
       }
     }
 
     function forceGetLink() {
-      oauth.sendSignedRequest("http://android2cloud.appspot.com/links/get", forceReturnLink, null);
+      try{
+          oauth.sendSignedRequest("http://android2cloud.appspot.com/links/get", forceReturnLink, null);
+      }catch(err){
+          alertOAuthProblem("Error retrieving link: "+err.description);
+      }
     }
     
     function forceReturnLink(resp, xhr) {
@@ -46,6 +58,9 @@
 	}
         localStorage['last_link'] = resp;
         openLink(resp);
+      }else if(resp.substr(0, 7) == "<error>"){
+	resp = resp.replace("</error>", "").replace("<error>", "");
+	alertOAuthProblem(resp);
       }else{
         if(localStorage['last_link'] != ""){
           openLink(localStorage['last_link']);
@@ -59,7 +74,10 @@
         localStorage['last_link'] = link;
         return true;
       }else{
-        //alert("Checked, and link \""+localStorage['last_link']+"\" is old.")
+        //alert("Checked, 
+      }catch(err){
+          alertOAuthProblem("Error retrieving link: "+err.description);
+      }and link \""+localStorage['last_link']+"\" is old.")
         return false;
       }
     }
@@ -73,6 +91,7 @@
     
     oauth.authorize(getLink);
     
+    
     // check if there's a new link
     timeout = setInterval("getLink()", 15000);
 
@@ -80,5 +99,18 @@
     chrome.browserAction.onClicked.addListener(function(tab) {
         forceGetLink();
     });
+
+    // something's not right... let them know!
+    function alertOAuthProblem(message) {
+        if (window.webkitNotifications.checkPermission() == 0) {
+            if(localStorage['oauth_notify'] == false || localStorage['oauth_notify'] == undefined){
+                // note the show()
+                window.webkitNotifications.createNotification('', 'android2cloud error', message).show(); 
+                localStorage["oauth_notify"] = true;
+            }
+        } else {
+            alert(message);
+        }
+    }
   </script>
 </html>

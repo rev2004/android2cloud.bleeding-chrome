@@ -1,12 +1,14 @@
 {
   "name": "android2cloud",
   "version": "1.0.0.3",
+  "options_page": "options.html",
   "description": "A way to push content from your Android phone to your Chrome web browser.",
   "browser_action": {
     "default_icon": "icon.png"
   },
   "permissions": [
   	"tabs",
+        "notifications",
     "http://android2cloud.appspot.com/",
     "https://android2cloud.appspot.com/"
   ],

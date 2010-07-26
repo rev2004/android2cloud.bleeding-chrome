@@ -1,0 +1,84 @@
+<html>
+<head><title>android2cloud Options</title>
+  <script type="text/javascript" src="chrome_ex_oauthsimple.js"></script>
+  <script type="text/javascript" src="chrome_ex_oauth.js"></script>
+  <script>
+    var oauth = ChromeExOAuth.initBackgroundPage({
+      'request_url': "https://android2cloud.appspot.com/_ah/OAuthGetRequestToken",
+      'authorize_url': "https://android2cloud.appspot.com/_ah/OAuthAuthorizeToken",
+      'access_url': "https://android2cloud.appspot.com/_ah/OAuthGetAccessToken",
+      'consumer_key': "anonymous",
+      'consumer_secret': "anonymous",
+      'app_name': "android2cloud extension"
+    });
+function get_current_user(){
+        try {
+		oauth.sendSignedRequest("http://android2cloud.appspot.com/users/get", validate_current_user, null);
+	}catch(err){
+		localStorage['user'] = "Couldn't get your username-- something's amiss! "+err.description;
+	}
+}
+
+function logout(){
+        oauth.clearTokens();
+        get_current_user();
+  server_input.value = server;
+  user_input.innerHTML = localStorage['user'];
+}
+
+function reauth(){
+       oauth.authorize(get_current_user);
+}
+
+function validate_current_user(resp, xhr){
+  var tag = resp.substr(0, 6)
+  if(tag == "<user>"){
+    localStorage['user'] = resp.replace("<user>", "").replace("</user>", "");
+  }else{
+    localStorage['user'] = "Couldn't get your username-- something's amiss!";
+  }
+  user_input = document.getElementById("user");
+  user_input.innerHTML = localStorage['user'];
+}
+
+// Saves options to localStorage.
+function save_options() {
+  var server = document.getElementById("server");
+  localStorage["server"] = server.value;
+
+  // Update status to let user know options were saved.
+  window.webkitNotifications.createNotification('', 'android2cloud', "Your settings were saved.").show(); 
+}
+
+// Restores select box state to saved value from localStorage.
+function restore_options() {
+  get_current_user();
+  var server = localStorage["server"];
+  if (!server) {
+    localStorage['server'] = "http://android2cloud.appspot.com";
+    server = "http://android2cloud.appspot.com";
+  }
+  var server_input = document.getElementById("server");
+  var user_input = document.getElementById("user");
+  server_input.value = server;
+  user_input.innerHTML = localStorage['user'];
+}
+
+</script>
+</head>
+<body onload="restore_options()">
+<h1>android2cloud Settings</h1>
+<p>Welcome to android2cloud. We're happy to have you using our application. If you're curious about our project, would like to set up your own server for your data, would like to customize this Chrome extension, or would like to customize the Android application, head on over to <a href="http://code.google.com/p/android2cloud" title="The project page">the project page</a> and take a look around.</p>
+
+<p style="font-weight:bold;">If at any time, you have an error or a problem using this application, please don't hesitate to report it to android2cloud@googlegroups.com. We want our code to work flawlessly, but we can only do that if we know about problems. Likewise, if you're interested in the project, you can subscribe to that group. Or just stop by and say hi. We love to hear from new people.</p>
+
+<p>Thanks<br />
+The android2cloud Team<br />
+<a href="http://code.google.com/p/android2cloud">http://code.google.com/p/android2cloud</a></p>
+<p>
+Server: <input type="text" id="server" value="http://android2cloud.appspot.com" style="width: 500px;" /><br />This is the server where your data will be stored. If you don't know, just leave it as is. Make sure to include the http://, and no trailing /.</p>
+<p>Authenticated as: <span id="user"></span><br />
+<button onClick="logout()">Logout</button> or <button onClick="reauth()">Re-Authenticate</button></p>
+<p><button onclick="save_options()">Save</button></p>
+</body>
+</html>
